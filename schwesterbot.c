@@ -52,11 +52,24 @@ int main(int argc, char **argv) {
   while ((n=read(sfd, buf, sizeof(buf)))) {
     buf[n]=0;
     printf("-> %s\n",buf);
-    if (!strncmp("PING :",buf,6))  // "PING :irc.blafasel.de"
-    {
+    if (!strncmp("PING :",buf,6)) { // "PING :irc.blafasel.de"
       // "PONG :irc.blafasel.de"
       buf[1]='O';
       send(sfd, buf, n, 0);
+    } else {
+      int i=0;
+      while (n!=i && buf[i] && buf[i++]!=' ');
+      // ":jomat!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!skip"
+      if (!strncmp(buf+i,"PRIVMSG ",8)) {
+        while (n!=i && buf[i] && buf[i++]!=':');
+        if (!strncmp(buf+i,"!skip",5)) {
+        } else if (!strncmp(buf+i,"!help",5)) {
+        } else if (!strncmp(buf+i,"!stop",5)) {
+        } else if (!strncmp(buf+i,"!ban",4)) {
+        } else if (!strncmp(buf+i,"!play",5)) {
+        } else if (!strncmp(buf+i,"!info",5)) {
+        }
+      }
     }
   }
 
