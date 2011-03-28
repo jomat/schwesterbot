@@ -132,7 +132,6 @@ int main(int argc, char **argv) {
           strncpy(buf+i,buf2,n_fm>(5120-i)?5120-i:n_fm);
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
-printf("ircbuf %s\n",buf);
           send(sfd, buf,strlen(buf),0);
         }
       }
