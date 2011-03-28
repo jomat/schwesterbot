@@ -13,13 +13,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-
+#include <pthread.h>
 
 #define IRC_HOST "irc.blafasel.de"
 #define IRC_PORT "6667"
 #define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\n"
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
+
+int sfd=0;
 
 int prepare_answer(char *buf,int *words,int n);
 
@@ -74,10 +76,38 @@ ssize_t send_irc(int sockfd, const void *buf, size_t len, int flags)
   return send(sockfd,buf,len,flags);
 }
 
+void update_status()
+{
+  static char last_playing[512];
+  char now_playing[512];
+# define INFOFORMAT_UPDATE "info %t\" by %a on %s\n"
+  int n_fm=txrx(INFOFORMAT_UPDATE,strlen(INFOFORMAT_UPDATE),now_playing,512);
+  now_playing[n_fm]=0;
+  if(strncmp(last_playing,now_playing,512)) {
+    char irc_cmd[512];
+    strncpy(last_playing,now_playing,512);
+    snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
+    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
+    snprintf(irc_cmd,512,"TOPIC #schwester :Now playing \"%s.\n",now_playing);
+    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
+  }
+}
+
+void *update_status_loop()
+{
+  int snooze;
+  while(1) {
+    update_status();
+    do {
+      snooze=sleep(3);
+    } while(snooze);
+  }
+}
+
 int main(int argc, char **argv) {
+  pthread_t status_thread;
   char buf[5120];
   int s=0
-    ,sfd=0
     ,n=0;
   struct addrinfo hints
     ,*result
@@ -107,6 +137,8 @@ int main(int argc, char **argv) {
   }
   
   send_irc(sfd, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
+
+  pthread_create(&status_thread, NULL, update_status_loop, NULL);
 
   while ((n=read(sfd, buf, sizeof(buf)))) {
     buf[n]=0;

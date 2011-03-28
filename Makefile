@@ -1,5 +1,5 @@
 MAKE = make                                                                                                                                  
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -lpthread
 CC = gcc 
 
 all: schwesterbot
