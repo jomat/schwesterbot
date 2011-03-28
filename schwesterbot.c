@@ -17,7 +17,8 @@
 
 #define IRC_HOST "irc.blafasel.de"
 #define IRC_PORT "6667"
-#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
+//#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
+#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\n"
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
@@ -183,6 +184,22 @@ int main(int argc, char **argv) {
           txrx("stop\n",5,NULL,0);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":trying to stop this.\n\0",23);
+          send_irc(sfd, buf,strlen(buf),0);
+        } else if (!strncmp(buf+words[2]+1,"!vol",4)) {
+          char tmp[512];
+          snprintf(tmp,sizeof(tmp),"volume %s\n",buf+words[3]);
+          i=prepare_answer(buf,words,n);
+          switch (buf[words[3]]) {
+            case '+':
+              strncpy(buf+i,":Harder! Faster! Louder!\n\0",sizeof(buf)-i);
+              break;
+            case '-':
+              strncpy(buf+i,":Calming down.\n\0",sizeof(buf)-i);
+              break;
+            default:
+              strncpy(buf+i,":Setting volume as requested.\n\0",sizeof(buf)-i);
+          }
+          txrx(tmp,strlen(tmp),NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
           txrx("ban\n",5,NULL,0);
