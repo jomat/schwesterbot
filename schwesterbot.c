@@ -139,7 +139,13 @@ int main(int argc, char **argv) {
             "globaltags/$TAG, user/$USER/recommended and user/$USER/playlist\n\0"
           strncpy(buf+i,HELPTEXT,strlen(HELPTEXT)+1);
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
+          txrx("stop\n",5,NULL,0);
+          i=prepare_answer(buf,words,n);
+          strncpy(buf+i,":trying to stop this.\n\0",23);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
+          txrx("ban\n",5,NULL,0);
+          i=prepare_answer(buf,words,n);
+          strncpy(buf+i,":trying to ban it.\n\0",20);
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
