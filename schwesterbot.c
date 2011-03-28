@@ -156,8 +156,9 @@ int main(int argc, char **argv) {
           txrx(tmp,strlen(tmp),NULL,0);
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
-#         define INFOFORMAT "info :Now playing \"%t\" by %a.\n"
+#         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
           int n_fm = txrx(INFOFORMAT,strlen(INFOFORMAT),buf2,512);
+          buf2[n_fm]=0;
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,buf2,5120-i);
           buf[n_fm+i]='\n';
