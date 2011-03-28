@@ -167,9 +167,15 @@ int main(int argc, char **argv) {
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(buf+words[0],"PRIVMSG ",8)) {
         if (!strncmp(buf+words[2]+1,"!skip",5)) {
-          txrx("skip\n",5,NULL,0);
+          char buf2[512];
+#         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
+          int n_fm = txrx(SKIPFORMAT,strlen(SKIPFORMAT),buf2,512);
+          buf2[n_fm]=0;
           i=prepare_answer(buf,words,n);
-          strncpy(buf+i,":..\n\0",5);
+          strncpy(buf+i,buf2,5120-i);
+          buf[n_fm+i]='\n';
+          buf[n_fm+i+1]=0;
+          txrx("skip\n",5,NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           i=prepare_answer(buf,words,n);
