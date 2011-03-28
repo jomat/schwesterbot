@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
         if (!strncmp(buf+words[2]+1,"!skip",5)) {
           txrx("skip\n",5,NULL,0);
           i=prepare_answer(buf,words,n);
-          strncpy(buf+i,":..\n",4);
+          strncpy(buf+i,":..\n\0",5);
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
