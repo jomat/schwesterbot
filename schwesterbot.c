@@ -10,10 +10,62 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+
 
 #define IRC_HOST "irc.blafasel.de"
 #define IRC_PORT "6667"
 #define IRC_IDSTRING "NICK jmt_sis\nUSER jmt_sis 0 * :Schwester\nJOIN #jomat_testchan\n"
+#define SHELLFM_HOST "schwester.club.muc.ccc.de"
+#define SHELLFM_PORT 54311
+
+int prepare_answer(char *buf,int *words,int n);
+
+int socket_connect(char *host, in_port_t port)
+{
+  struct hostent *hp;
+  struct sockaddr_in addr;
+  int on = 1, sock;
+ 
+  if ((hp = gethostbyname(host)) == NULL) {
+    // TODO: add some logging facility for these errors
+    return -1; 
+  }
+  bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
+  addr.sin_port = htons(port);
+  addr.sin_family = AF_INET;
+  sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *) &on,
+             sizeof(int));
+ 
+  if (sock == -1) 
+    return -1; 
+ 
+  if (connect(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_in))
+      == -1) {
+    close(sock);
+    return -1; 
+  }
+ 
+  return sock;
+}
+ 
+int txrx(char *command,int bytes,char *buf, int bufsize)
+{
+  int socket,n;
+ 
+  socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT); 
+ 
+  write(socket, command, bytes); 
+
+  n=read(socket, buf, bufsize);
+ 
+  close(socket); 
+ 
+  return n;
+}
 
 int main(int argc, char **argv) {
   char buf[5120];
@@ -73,22 +125,14 @@ int main(int argc, char **argv) {
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
-          if(buf[words[1]]=='#') { // we received from a channel
-            // tx: "PRIVMSG #jomat_testchan :hi there\n"
-            for(i=words[0];i<words[2];i++)
-              buf[i-words[0]]=buf[i];
-            strncpy(buf+i-words[0],":hi there\n",strlen(" :hi there\n"));
-
-          } else {  // it was a query
-            // tx: "PRIVMSG jomatv6 :hi there\n"
-            i=0;
-            while (n!=i && buf[i] && buf[i++]!='!');
-            int j;
-            for(j=i-2;j>0;j--)
-              buf[j+7]=buf[j];
-            strncpy(buf,"PRIVMSG ",8);
-            strncpy(buf+i+6," :hi there\n\0",12);
-          }
+          char buf2[512];
+#         define INFOFORMAT "info :Now playing \"%t\" by %a.\n"
+          int n_fm = txrx(INFOFORMAT,strlen(INFOFORMAT),buf2,512);
+          i=prepare_answer(buf,words,n);
+          strncpy(buf+i,buf2,n_fm>(5120-i)?5120-i:n_fm);
+          buf[n_fm+i]='\n';
+          buf[n_fm+i+1]=0;
+printf("ircbuf %s\n",buf);
           send(sfd, buf,strlen(buf),0);
         }
       }
@@ -99,4 +143,25 @@ int main(int argc, char **argv) {
   close(sfd);
 
   exit(EXIT_SUCCESS);
+}
+
+int prepare_answer(char *buf,int *words,int n) {
+  int i;
+  if(buf[words[1]]=='#') { // we received from a channel
+    // tx: "PRIVMSG #jomat_testchan :hi there\n"
+    for(i=words[0];i<words[2];i++)
+      buf[i-words[0]]=buf[i];
+    i-=words[0];
+  } else {  // it was a query
+    // tx: "PRIVMSG jomatv6 :hi there\n"
+    i=0;
+    while (n!=i && buf[i] && buf[i++]!='!');
+    int j;
+    for(j=i-2;j>0;j--)
+      buf[j+7]=buf[j];
+    buf[i+6]=' ';
+    strncpy(buf,"PRIVMSG ",8);
+    i+=7;
+  }
+  return i;
 }
