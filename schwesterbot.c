@@ -54,13 +54,14 @@ int socket_connect(char *host, in_port_t port)
  
 int txrx(char *command,int bytes,char *buf, int bufsize)
 {
-  int socket,n;
+  int socket,n=0;
  
   socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT); 
  
   write(socket, command, bytes); 
 
-  n=read(socket, buf, bufsize);
+  if(bufsize)
+    n=read(socket, buf, bufsize);
  
   close(socket); 
  
