@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           i=prepare_answer(buf,words,n);
 #         define HELPTEXT ":How may I satisfy you? I have a good grasp of" \
-            " !love, !play, !ban, !help, !skip and !stop. I can !play" \
+            " !love, !play, !ban, !vol, !help, !skip and !stop. I can !play" \
             " user/$USER/loved, user/$USER/personal, usertags/$USER/$TAG, "\
             "artist/$ARTIST/similarartists, artist/$ARTIST/fans, " \
             "globaltags/$TAG, user/$USER/recommended and user/$USER/playlist\n\0"
