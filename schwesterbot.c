@@ -52,22 +52,44 @@ int main(int argc, char **argv) {
   while ((n=read(sfd, buf, sizeof(buf)))) {
     buf[n]=0;
     printf("-> %s\n",buf);
-    if (!strncmp("PING :",buf,6)) { // "PING :irc.blafasel.de"
-      // "PONG :irc.blafasel.de"
+    if (!strncmp("PING :",buf,6)) { // rx: "PING :irc.blafasel.de"
+      // tx: "PONG :irc.blafasel.de"
       buf[1]='O';
       send(sfd, buf, n, 0);
     } else {
-      int i=0;
+      int i=0
+        ,words[3];
       while (n!=i && buf[i] && buf[i++]!=' ');
-      // ":jomat!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!skip"
-      if (!strncmp(buf+i,"PRIVMSG ",8)) {
-        while (n!=i && buf[i] && buf[i++]!=':');
-        if (!strncmp(buf+i,"!skip",5)) {
-        } else if (!strncmp(buf+i,"!help",5)) {
-        } else if (!strncmp(buf+i,"!stop",5)) {
-        } else if (!strncmp(buf+i,"!ban",4)) {
-        } else if (!strncmp(buf+i,"!play",5)) {
-        } else if (!strncmp(buf+i,"!info",5)) {
+      words[0]=i;
+      while (n!=i && buf[i] && buf[i++]!=' ');
+      words[1]=i;
+      while (n!=i && buf[i] && buf[i++]!=' ');
+      words[2]=i;
+      // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
+      if (!strncmp(buf+words[0],"PRIVMSG ",8)) {
+        if (!strncmp(buf+words[2]+1,"!skip",5)) {
+        } else if (!strncmp(buf+words[2]+1,"!help",5)) {
+        } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
+        } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
+        } else if (!strncmp(buf+words[2]+1,"!play",5)) {
+        } else if (!strncmp(buf+words[2]+1,"!info",5)) {
+          if(buf[words[1]]=='#') { // we received from a channel
+            // tx: "PRIVMSG #jomat_testchan :hi there\n"
+            for(i=words[0];i<words[2];i++)
+              buf[i-words[0]]=buf[i];
+            strncpy(buf+i-words[0],":hi there\n",strlen(" :hi there\n"));
+
+          } else {  // it was a query
+            // tx: "PRIVMSG jomatv6 :hi there\n"
+            i=0;
+            while (n!=i && buf[i] && buf[i++]!='!');
+            int j;
+            for(j=i-2;j>0;j--)
+              buf[j+7]=buf[j];
+            strncpy(buf,"PRIVMSG ",8);
+            strncpy(buf+i+6," :hi there\n\0",12);
+          }
+          send(sfd, buf,strlen(buf),0);
         }
       }
     }
