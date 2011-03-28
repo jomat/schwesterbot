@@ -214,9 +214,14 @@ int main(int argc, char **argv) {
           txrx(tmp,strlen(tmp),NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
-          txrx("ban\n",5,NULL,0);
+#         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
+          int n_fm = txrx(BANFORMAT,strlen(BANFORMAT),buf2,512);
+          buf2[n_fm]=0;
           i=prepare_answer(buf,words,n);
-          strncpy(buf+i,":trying to ban it.\n\0",20);
+          strncpy(buf+i,buf2,5120-i);
+          buf[n_fm+i]='\n';
+          buf[n_fm+i+1]=0;
+          txrx("ban\n",4,NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
           char tmp[512];
