@@ -68,6 +68,12 @@ int txrx(char *command,int bytes,char *buf, int bufsize)
   return n;
 }
 
+ssize_t send_irc(int sockfd, const void *buf, size_t len, int flags)
+{
+  printf("<- %s",(char*)buf);
+  return send(sockfd,buf,len,flags);
+}
+
 int main(int argc, char **argv) {
   char buf[5120];
   int s=0
@@ -100,7 +106,7 @@ int main(int argc, char **argv) {
     close (sfd); 
   }
   
-  send(sfd, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
+  send_irc(sfd, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
 
   while ((n=read(sfd, buf, sizeof(buf)))) {
     buf[n]=0;
@@ -108,7 +114,7 @@ int main(int argc, char **argv) {
     if (!strncmp("PING :",buf,6)) { // rx: "PING :irc.blafasel.de"
       // tx: "PONG :irc.blafasel.de"
       buf[1]='O';
-      send(sfd, buf, n, 0);
+      send_irc(sfd, buf, n, 0);
     } else {
       int i=0
         ,words[3];
@@ -137,12 +143,12 @@ int main(int argc, char **argv) {
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
         }
-        send(sfd, buf,strlen(buf),0);
+        send_irc(sfd, buf,strlen(buf),0);
       }
     }
   }
 
-  send(sfd,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
+  send_irc(sfd,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
   close(sfd);
 
   exit(EXIT_SUCCESS);
