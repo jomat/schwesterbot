@@ -198,22 +198,26 @@ int main(int argc, char **argv) {
           txrx("skip\n",5,NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!vol",4)) {
-          char tmp[512];
+          char tmp[512],buf2[512];
+#         define VOLFORMAT "info %v\n"
+          int n_fm = txrx(VOLFORMAT,strlen(VOLFORMAT),buf2,512);
+          buf2[n_fm-1]=0;
           snprintf(tmp,sizeof(tmp),"volume %s\n",buf+words[3]);
+          txrx(tmp,strlen(tmp),NULL,0);
           i=prepare_answer(buf,words,n);
           switch (buf[words[3]]) {
             case '+':
-              strncpy(buf+i,":Harder! Faster! Louder!\n\0",sizeof(buf)-i);
+              snprintf(buf+i,sizeof(buf)-i,":Harder! Faster! Louder! %s was too silent!\n",buf2);
               break;
             case '-':
-              strncpy(buf+i,":Calming down.\n\0",sizeof(buf)-i);
+              snprintf(buf+i,sizeof(buf)-i,":Calming down. We were at %s.\n",buf2);
               break;
             default:
-              strncpy(buf+i,":Setting volume as requested.\n\0",sizeof(buf)-i);
+              snprintf(buf+i,sizeof(buf)-i,":Setting volume as requested, it was %s.\n",buf2);
           }
-          txrx(tmp,strlen(tmp),NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
+          char buf2[512];
 #         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
           int n_fm = txrx(BANFORMAT,strlen(BANFORMAT),buf2,512);
           buf2[n_fm]=0;
