@@ -180,16 +180,22 @@ int main(int argc, char **argv) {
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           i=prepare_answer(buf,words,n);
 #         define HELPTEXT ":How may I satisfy you? I have a good grasp of" \
-            " !love, !play, !ban, !vol, !help, !skip and !stop. I can !play" \
+            " !love, !play, !ban, !vol, !help, !info, !skip and !stop. I can !play" \
             " user/$USER/loved, user/$USER/personal, usertags/$USER/$TAG, "\
             "artist/$ARTIST/similarartists, artist/$ARTIST/fans, " \
             "globaltags/$TAG, user/$USER/recommended and user/$USER/playlist\n\0"
           strncpy(buf+i,HELPTEXT,strlen(HELPTEXT)+1);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
-          txrx("stop\n",5,NULL,0);
+          char buf2[512];
+#         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
+          int n_fm = txrx(SKIPFORMAT,strlen(SKIPFORMAT),buf2,512);
+          buf2[n_fm]=0;
           i=prepare_answer(buf,words,n);
-          strncpy(buf+i,":trying to stop this.\n\0",23);
+          strncpy(buf+i,buf2,5120-i);
+          buf[n_fm+i]='\n';
+          buf[n_fm+i+1]=0;
+          txrx("skip\n",5,NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!vol",4)) {
           char tmp[512];
