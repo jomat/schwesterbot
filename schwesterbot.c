@@ -17,7 +17,7 @@
 
 #define IRC_HOST "irc.blafasel.de"
 #define IRC_PORT "6667"
-#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\n"
+#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
@@ -108,10 +108,15 @@ int main(int argc, char **argv) {
   pthread_t status_thread;
   char buf[5120];
   int s=0
-    ,n=0;
+    ,n=0
+    ,f=0;
   struct addrinfo hints
     ,*result
     ,*rp;
+
+  f=fork();
+  if (f<0) exit(1); /* fork error */
+  if (f>0) exit(0); /* parent exits */
 
   memset (&hints, 0, sizeof (struct addrinfo));
   hints.ai_family = AF_INET6;
@@ -164,6 +169,7 @@ int main(int argc, char **argv) {
           txrx("skip\n",5,NULL,0);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":..\n\0",5);
+          send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           i=prepare_answer(buf,words,n);
 #         define HELPTEXT ":How may I satisfy you? I have a good grasp of" \
@@ -172,20 +178,24 @@ int main(int argc, char **argv) {
             "artist/$ARTIST/similarartists, artist/$ARTIST/fans, " \
             "globaltags/$TAG, user/$USER/recommended and user/$USER/playlist\n\0"
           strncpy(buf+i,HELPTEXT,strlen(HELPTEXT)+1);
+          send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
           txrx("stop\n",5,NULL,0);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":trying to stop this.\n\0",23);
+          send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
           txrx("ban\n",5,NULL,0);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":trying to ban it.\n\0",20);
+          send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
           char tmp[512];
           snprintf(tmp,sizeof(tmp),"play %s\n",buf+words[3]);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":I'll try to play this for you.\n\0",33);
           txrx(tmp,strlen(tmp),NULL,0);
+          send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
 #         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
@@ -195,8 +205,8 @@ int main(int argc, char **argv) {
           strncpy(buf+i,buf2,5120-i);
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
+          send_irc(sfd, buf,strlen(buf),0);
         }
-        send_irc(sfd, buf,strlen(buf),0);
       }
     }
   }
