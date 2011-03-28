@@ -83,7 +83,7 @@ void update_status()
   char now_playing[512];
 # define INFOFORMAT_UPDATE "info %t\" by %a on %s\n"
   int n_fm=txrx(INFOFORMAT_UPDATE,strlen(INFOFORMAT_UPDATE),now_playing,512);
-  now_playing[n_fm]=0;
+  now_playing[n_fm-1]=0;
   if(strncmp(last_playing,now_playing,512)) {
     char irc_cmd[512];
     strncpy(last_playing,now_playing,512);
