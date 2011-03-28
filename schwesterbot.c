@@ -175,20 +175,33 @@ int main(int argc, char **argv) {
 #         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
           int n_fm = txrx(SKIPFORMAT,strlen(SKIPFORMAT),buf2,512);
           buf2[n_fm]=0;
-          i=prepare_answer(buf,words,n);
           strncpy(buf+i,buf2,5120-i);
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
           txrx("skip\n",5,NULL,0);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
+          char helptext[512];
+          helptext[0]=0;
+          if ((buf+words[2]+6)[0]==0xd) {  /* 0xd = carriage return */
+            strncpy(helptext,":How may I satisfy you? I have a good grasp of"
+              " !love, !play, !ban, !vol, !help, !info, !skip and !stop. "
+              "Just ask for more :-)\n"
+              ,sizeof(helptext));
+          } else if ((!strncmp(buf+words[2]+((buf+words[2]+7)[0]=='!'?8:7),"vol",3))) {
+            strncpy(helptext,":Try something like !vol 50 (I can go up to 64!) "
+              "or !vol %50 (this is 32) or !vol +3 or !vol -1\n",sizeof(helptext));
+          } else if (!strncmp(buf+words[2]+((buf+words[2]+7)[0]=='!'?8:7)," !play",6)) {
+            strncpy(helptext,":I can !play user/$USER/loved, "
+              "user/$USER/personal, usertags/$USER/$TAG, "
+              "artist/$ARTIST/similarartists, artist/$ARTIST/fans, "
+              "globaltags/$TAG, user/$USER/recommended and "
+              "user/$USER/playlist\n",sizeof(helptext));
+          } else {
+            strncpy(helptext,":No clue...\n",sizeof(helptext));
+          }
           i=prepare_answer(buf,words,n);
-#         define HELPTEXT ":How may I satisfy you? I have a good grasp of" \
-            " !love, !play, !ban, !vol, !help, !info, !skip and !stop. I can !play" \
-            " user/$USER/loved, user/$USER/personal, usertags/$USER/$TAG, "\
-            "artist/$ARTIST/similarartists, artist/$ARTIST/fans, " \
-            "globaltags/$TAG, user/$USER/recommended and user/$USER/playlist\n\0"
-          strncpy(buf+i,HELPTEXT,strlen(HELPTEXT)+1);
+          strncpy(buf+i,helptext,sizeof(buf)-i);
           send_irc(sfd, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
           char buf2[512];
