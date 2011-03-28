@@ -3,12 +3,15 @@ PATH += :/home/jomat/OpenWrt/backfire/staging_dir/toolchain-armeb_v5te_gcc-4.3.3
 MAKE = make                                                                                                                                  
 CFLAGS = -g -Wall -lpthread
 CC = armeb-openwrt-linux-gcc 
+STRIP = armeb-openwrt-linux-strip
 
-all: schwesterbot
+all: schwesterbot strip
 
 schwesterbot: schwesterbot.c
 	$(CC) $(CFLAGS) schwesterbot.c -o schwesterbot
 
+strip: schwesterbot
+	$(STRIP) -g schwesterbot
  
 clean:
 	rm -f *.o schwesterbot
