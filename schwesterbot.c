@@ -87,9 +87,9 @@ void update_status()
   if(strncmp(last_playing,now_playing,512)) {
     char irc_cmd[512];
     strncpy(last_playing,now_playing,512);
-    snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
-    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
     snprintf(irc_cmd,512,"TOPIC #schwester :Now playing \"%s.\n",now_playing);
+    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
+    snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
     send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
   }
 }
