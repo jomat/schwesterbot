@@ -117,13 +117,15 @@ int main(int argc, char **argv) {
       send_irc(sfd, buf, n, 0);
     } else {
       int i=0
-        ,words[3];
+        ,words[4];
       while (n!=i && buf[i] && buf[i++]!=' ');
       words[0]=i;
       while (n!=i && buf[i] && buf[i++]!=' ');
       words[1]=i;
       while (n!=i && buf[i] && buf[i++]!=' ');
       words[2]=i;
+      while (n!=i && buf[i] && buf[i++]!=' ');
+      words[3]=i;
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(buf+words[0],"PRIVMSG ",8)) {
         if (!strncmp(buf+words[2]+1,"!skip",5)) {
@@ -147,12 +149,17 @@ int main(int argc, char **argv) {
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":trying to ban it.\n\0",20);
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
+          char tmp[512];
+          snprintf(tmp,sizeof(tmp),"play %s\n",buf+words[3]);
+          i=prepare_answer(buf,words,n);
+          strncpy(buf+i,":I'll try to play this for you.\n\0",33);
+          txrx(tmp,strlen(tmp),NULL,0);
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
 #         define INFOFORMAT "info :Now playing \"%t\" by %a.\n"
           int n_fm = txrx(INFOFORMAT,strlen(INFOFORMAT),buf2,512);
           i=prepare_answer(buf,words,n);
-          strncpy(buf+i,buf2,n_fm>(5120-i)?5120-i:n_fm);
+          strncpy(buf+i,buf2,5120-i);
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
         }
