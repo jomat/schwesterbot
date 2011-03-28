@@ -7,6 +7,9 @@ STRIP = armeb-openwrt-linux-strip
 
 all: schwesterbot strip
 
+debug: 
+	gcc $(CFLAGS) -DDEBUG schwesterbot.c -o schwesterbot
+
 schwesterbot: schwesterbot.c
 	$(CC) $(CFLAGS) schwesterbot.c -o schwesterbot
 

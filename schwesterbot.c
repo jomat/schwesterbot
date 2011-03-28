@@ -17,8 +17,11 @@
 
 #define IRC_HOST "irc.blafasel.de"
 #define IRC_PORT "6667"
-//#define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
-#define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\n"
+#ifndef DEBUG
+#  define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
+#else
+#  define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
+#endif
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
@@ -109,15 +112,16 @@ int main(int argc, char **argv) {
   pthread_t status_thread;
   char buf[5120];
   int s=0
-    ,n=0
-    ,f=0;
+    ,n=0;
   struct addrinfo hints
     ,*result
     ,*rp;
 
-  f=fork();
+# ifndef DEBUG
+  int f=fork();
   if (f<0) exit(1); /* fork error */
   if (f>0) exit(0); /* parent exits */
+# endif /* DEBUG */
 
   memset (&hints, 0, sizeof (struct addrinfo));
   hints.ai_family = AF_INET6;
