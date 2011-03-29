@@ -166,6 +166,14 @@ void connect_irc()
    
 }
 
+#define find_words(irc_buf,irc_bytes_read,words) do {                \
+    int i=0,j=0,arraysize=sizeof(words)/sizeof(*words);              \
+    for (;j<arraysize;j++) {                                         \
+      while (irc_bytes_read!=i && irc_buf[i] && irc_buf[i++]!=' ');  \
+      words[j]=i;                                                    \
+    }                                                                \
+  } while (0);
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
 # define IRC_BUFSIZE 5120
@@ -197,25 +205,20 @@ int main(int argc, char **argv) {
       irc_buf[1]='O';
       send_irc(irc_sock, irc_buf, irc_bytes_read, 0);
     } else {
-      int i=0
-        ,words[4];
-      while (irc_bytes_read!=i && irc_buf[i] && irc_buf[i++]!=' ');
-      words[0]=i;
-      while (irc_bytes_read!=i && irc_buf[i] && irc_buf[i++]!=' ');
-      words[1]=i;
-      while (irc_bytes_read!=i && irc_buf[i] && irc_buf[i++]!=' ');
-      words[2]=i;
-      while (irc_bytes_read!=i && irc_buf[i] && irc_buf[i++]!=' ');
-      words[3]=i;
+
+      int words[4];
+      find_words(irc_buf,irc_bytes_read,words);
 
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(irc_buf+words[0],"PRIVMSG ",8)) {
+        int i=0;
 
         if (!strncmp(irc_buf+words[2]+1,"!skip",5)) {
           char shellfm_rxbuf[512];
 #         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
           int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
           shellfm_rxbuf[n_fm]=0;
+          i=prepare_answer(irc_buf,words,irc_bytes_read);
           strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
           irc_buf[n_fm+i]='\n';
           irc_buf[n_fm+i+1]=0;
