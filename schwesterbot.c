@@ -131,20 +131,15 @@ void *update_status_loop()
   }
 }
 
-int main(int argc, char **argv) {
-  pthread_t status_thread;
-  char buf[5120];
-  int s=0
-    ,n=0;
+/*
+ * connects to defined IRC server and sets global sfd as filepointer to socket
+ */
+void connect_irc()
+{
   struct addrinfo hints
     ,*result
     ,*rp;
-
-# ifndef DEBUG
-  int f=fork();
-  if (f<0) exit(1); /* fork error */
-  if (f>0) exit(0); /* parent exits */
-# endif /* DEBUG */
+  int s=0;
 
   memset (&hints, 0, sizeof (struct addrinfo));
   hints.ai_family = AF_INET6;
@@ -168,7 +163,22 @@ int main(int argc, char **argv) {
 
     close (sfd); 
   }
-  
+   
+}
+
+int main(int argc, char **argv) {
+  pthread_t status_thread;
+  char buf[5120];
+  int n=0;
+
+# ifndef DEBUG
+  int f=fork();
+  if (f<0) exit(1); /* fork error */
+  if (f>0) exit(0); /* parent exits */
+# endif /* DEBUG */
+
+  connect_irc();
+ 
   send_irc(sfd, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
 
   pthread_create(&status_thread, NULL, update_status_loop, NULL);
