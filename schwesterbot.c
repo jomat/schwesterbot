@@ -179,15 +179,20 @@ int main(int argc, char **argv) {
 
   connect_irc();
  
+  // set nick, join channels, etc.
   send_irc(sock_irc, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
 
   pthread_create(&status_thread, NULL, update_status_loop, NULL);
 
+  // read from irc and react on it
   while ((n=read(sock_irc, buf, sizeof(buf)))) {
     buf[n]=0;
     printf("-> %s\n",buf);
-    if (!strncmp("PING :",buf,6)) { // rx: "PING :irc.blafasel.de"
+
+    if (!strncmp("PING :",buf,6)) {
+      // rx: "PING :irc.blafasel.de"
       // tx: "PONG :irc.blafasel.de"
+      // just replace the second char
       buf[1]='O';
       send_irc(sock_irc, buf, n, 0);
     } else {
@@ -201,8 +206,10 @@ int main(int argc, char **argv) {
       words[2]=i;
       while (n!=i && buf[i] && buf[i++]!=' ');
       words[3]=i;
+
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(buf+words[0],"PRIVMSG ",8)) {
+
         if (!strncmp(buf+words[2]+1,"!skip",5)) {
           char buf2[512];
 #         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
@@ -213,6 +220,7 @@ int main(int argc, char **argv) {
           buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           char helptext[512];
           helptext[0]=0;
@@ -236,6 +244,7 @@ int main(int argc, char **argv) {
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,helptext,sizeof(buf)-i);
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
           char buf2[512];
 #         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
@@ -247,6 +256,7 @@ int main(int argc, char **argv) {
           buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!vol",4)) {
           char tmp[512],buf2[512];
 #         define VOLFORMAT "info %v\n"
@@ -271,6 +281,7 @@ int main(int argc, char **argv) {
               snprintf(buf+i,sizeof(buf)-i,":Setting volume as requested, it was %s.\n",buf2);
           }
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
           char buf2[512];
 #         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
@@ -282,6 +293,7 @@ int main(int argc, char **argv) {
           buf[n_fm+i+1]=0;
           txrx_shellfm("ban\n",4,NULL,0);
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
           char tmp[512];
           snprintf(tmp,sizeof(tmp),"play %s\n",buf+words[3]);
@@ -289,6 +301,7 @@ int main(int argc, char **argv) {
           strncpy(buf+i,":I'll try to play this for you.\n\0",33);
           txrx_shellfm(tmp,strlen(tmp),NULL,0);
           send_irc(sock_irc, buf,strlen(buf),0);
+
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
 #         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
