@@ -25,7 +25,7 @@
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
-int sfd=0;
+int sock_irc=0;
 
 int prepare_answer(char *buf,int *words,int n);
 
@@ -111,9 +111,9 @@ void update_status()
     char irc_cmd[512];
     strncpy(last_playing,now_playing,512);
     snprintf(irc_cmd,512,"TOPIC #schwester :Now playing \"%s.\n",now_playing);
-    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
+    send_irc(sock_irc,irc_cmd,strlen(irc_cmd),0);
     snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
-    send_irc(sfd,irc_cmd,strlen(irc_cmd),0);
+    send_irc(sock_irc,irc_cmd,strlen(irc_cmd),0);
   }
 }
 
@@ -132,7 +132,7 @@ void *update_status_loop()
 }
 
 /*
- * connects to defined IRC server and sets global sfd as filepointer to socket
+ * connects to defined IRC server and sets global sock_irc as filepointer to socket
  */
 void connect_irc()
 {
@@ -154,14 +154,14 @@ void connect_irc()
   }  
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-    sfd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (sfd == -1)
+    sock_irc = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (sock_irc == -1)
       continue;
 
-    if (connect (sfd, rp->ai_addr, rp->ai_addrlen) != -1) 
+    if (connect (sock_irc, rp->ai_addr, rp->ai_addrlen) != -1) 
       break;
 
-    close (sfd); 
+    close (sock_irc); 
   }
    
 }
@@ -179,17 +179,17 @@ int main(int argc, char **argv) {
 
   connect_irc();
  
-  send_irc(sfd, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
+  send_irc(sock_irc, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
 
   pthread_create(&status_thread, NULL, update_status_loop, NULL);
 
-  while ((n=read(sfd, buf, sizeof(buf)))) {
+  while ((n=read(sock_irc, buf, sizeof(buf)))) {
     buf[n]=0;
     printf("-> %s\n",buf);
     if (!strncmp("PING :",buf,6)) { // rx: "PING :irc.blafasel.de"
       // tx: "PONG :irc.blafasel.de"
       buf[1]='O';
-      send_irc(sfd, buf, n, 0);
+      send_irc(sock_irc, buf, n, 0);
     } else {
       int i=0
         ,words[4];
@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!help",5)) {
           char helptext[512];
           helptext[0]=0;
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
           }
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,helptext,sizeof(buf)-i);
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!stop",5)) {
           char buf2[512];
 #         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!vol",4)) {
           char tmp[512],buf2[512];
 #         define VOLFORMAT "info %v\n"
@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
             default:
               snprintf(buf+i,sizeof(buf)-i,":Setting volume as requested, it was %s.\n",buf2);
           }
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!ban",4)) {
           char buf2[512];
 #         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
@@ -281,14 +281,14 @@ int main(int argc, char **argv) {
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
           txrx_shellfm("ban\n",4,NULL,0);
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!play",5)) {
           char tmp[512];
           snprintf(tmp,sizeof(tmp),"play %s\n",buf+words[3]);
           i=prepare_answer(buf,words,n);
           strncpy(buf+i,":I'll try to play this for you.\n\0",33);
           txrx_shellfm(tmp,strlen(tmp),NULL,0);
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         } else if (!strncmp(buf+words[2]+1,"!info",5)) {
           char buf2[512];
 #         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
@@ -298,14 +298,14 @@ int main(int argc, char **argv) {
           strncpy(buf+i,buf2,5120-i);
           buf[n_fm+i]='\n';
           buf[n_fm+i+1]=0;
-          send_irc(sfd, buf,strlen(buf),0);
+          send_irc(sock_irc, buf,strlen(buf),0);
         }
       }
     }
   }
 
-  send_irc(sfd,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
-  close(sfd);
+  send_irc(sock_irc,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
+  close(sock_irc);
 
   exit(EXIT_SUCCESS);
 }
