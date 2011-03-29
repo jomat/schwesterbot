@@ -212,11 +212,11 @@ int main(int argc, char **argv) {
       if (!strncmp(irc_buf+words[0],"PRIVMSG ",8)) {
 
         if (!strncmp(irc_buf+words[2]+1,"!skip",5)) {
-          char buf2[512];
+          char shellfm_rxbuf[512];
 #         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),buf2,512);
-          buf2[n_fm]=0;
-          strncpy(irc_buf+i,buf2,IRC_BUFSIZE-i);
+          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
+          shellfm_rxbuf[n_fm]=0;
+          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
           irc_buf[n_fm+i]='\n';
           irc_buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
@@ -247,22 +247,22 @@ int main(int argc, char **argv) {
           send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 
         } else if (!strncmp(irc_buf+words[2]+1,"!stop",5)) {
-          char buf2[512];
+          char shellfm_rxbuf[512];
 #         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),buf2,512);
-          buf2[n_fm]=0;
+          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
+          shellfm_rxbuf[n_fm]=0;
           i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,buf2,IRC_BUFSIZE-i);
+          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
           irc_buf[n_fm+i]='\n';
           irc_buf[n_fm+i+1]=0;
           txrx_shellfm("skip\n",5,NULL,0);
           send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 
         } else if (!strncmp(irc_buf+words[2]+1,"!vol",4)) {
-          char tmp[512],buf2[512];
+          char tmp[512],shellfm_rxbuf[512];
 #         define VOLFORMAT "info %v\n"
-          int n_fm = txrx_shellfm(VOLFORMAT,strlen(VOLFORMAT),buf2,512);
-          buf2[n_fm-1]=0;
+          int n_fm = txrx_shellfm(VOLFORMAT,strlen(VOLFORMAT),shellfm_rxbuf,512);
+          shellfm_rxbuf[n_fm-1]=0;
           if (irc_buf[words[3]]) {
             snprintf(tmp,sizeof(tmp),"volume %s\n",irc_buf+words[3]);
             txrx_shellfm(tmp,strlen(tmp),NULL,0);
@@ -270,26 +270,26 @@ int main(int argc, char **argv) {
           i=prepare_answer(irc_buf,words,irc_bytes_read);
           switch (irc_buf[words[3]]) {
             case 0:
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":We're going at %s.\n",buf2);
+              snprintf(irc_buf+i,sizeof(irc_buf)-i,":We're going at %s.\n",shellfm_rxbuf);
               break;
             case '+':
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Harder! Faster! Louder! %s was too silent!\n",buf2);
+              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Harder! Faster! Louder! %s was too silent!\n",shellfm_rxbuf);
               break;
             case '-':
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Calming down. We were at %s.\n",buf2);
+              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Calming down. We were at %s.\n",shellfm_rxbuf);
               break;
             default:
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Setting volume as requested, it was %s.\n",buf2);
+              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Setting volume as requested, it was %s.\n",shellfm_rxbuf);
           }
           send_irc(irc_sock, irc_buf,strlen(irc_buf),0);
 
         } else if (!strncmp(irc_buf+words[2]+1,"!ban",4)) {
-          char buf2[512];
+          char shellfm_rxbuf[512];
 #         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(BANFORMAT,strlen(BANFORMAT),buf2,512);
-          buf2[n_fm]=0;
+          int n_fm = txrx_shellfm(BANFORMAT,strlen(BANFORMAT),shellfm_rxbuf,512);
+          shellfm_rxbuf[n_fm]=0;
           i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,buf2,IRC_BUFSIZE-i);
+          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
           irc_buf[n_fm+i]='\n';
           irc_buf[n_fm+i+1]=0;
           txrx_shellfm("ban\n",4,NULL,0);
@@ -304,12 +304,12 @@ int main(int argc, char **argv) {
           send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 
         } else if (!strncmp(irc_buf+words[2]+1,"!info",5)) {
-          char buf2[512];
+          char shellfm_rxbuf[512];
 #         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),buf2,512);
-          buf2[n_fm]=0;
+          int n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),shellfm_rxbuf,512);
+          shellfm_rxbuf[n_fm]=0;
           i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,buf2,IRC_BUFSIZE-i);
+          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
           irc_buf[n_fm+i]='\n';
           irc_buf[n_fm+i+1]=0;
           send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
