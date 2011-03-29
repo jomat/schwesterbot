@@ -219,10 +219,15 @@ int main(int argc, char **argv) {
 #         define VOLFORMAT "info %v\n"
           int n_fm = txrx(VOLFORMAT,strlen(VOLFORMAT),buf2,512);
           buf2[n_fm-1]=0;
-          snprintf(tmp,sizeof(tmp),"volume %s\n",buf+words[3]);
-          txrx(tmp,strlen(tmp),NULL,0);
+          if (buf[words[3]]) {
+            snprintf(tmp,sizeof(tmp),"volume %s\n",buf+words[3]);
+            txrx(tmp,strlen(tmp),NULL,0);
+          }
           i=prepare_answer(buf,words,n);
           switch (buf[words[3]]) {
+            case 0:
+              snprintf(buf+i,sizeof(buf)-i,":We're going at %s.\n",buf2);
+              break;
             case '+':
               snprintf(buf+i,sizeof(buf)-i,":Harder! Faster! Louder! %s was too silent!\n",buf2);
               break;
