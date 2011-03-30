@@ -222,6 +222,17 @@ void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
   txrx_shellfm("skip\n",5,NULL,0);
 }
 
+void cmd_ver(char *irc_buf,int *words,int *irc_bytes_read) {
+  int i;
+  char helptext[128];
+  helptext[0]=0;
+  snprintf(helptext,sizeof(helptext),":I was compiled on %s at %s\n",__DATE__,__TIME__);
+  i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  strncpy(irc_buf+i,helptext,IRC_BUFSIZE-i);
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+}
+
+
 void cmd_help(char *irc_buf,int *words,int *irc_bytes_read) {
   int i;
   char helptext[512];
@@ -421,6 +432,8 @@ int main(int argc, char **argv) {
           cmd_vol(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!ban",4)) {
           cmd_ban(irc_buf,words,&irc_bytes_read);
+        } else if (!strncmp(irc_buf+words[2]+1,"!ver",4)) {
+          cmd_ver(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!play",5)) {
           cmd_play(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!love",5)) {
