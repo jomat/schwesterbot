@@ -205,7 +205,6 @@ void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
     return;
   }
 
-
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
   irc_buf[n_fm+i]='\n';
@@ -213,6 +212,32 @@ void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 
   txrx_shellfm("skip\n",5,NULL,0);
+}
+
+void cmd_help(char *irc_buf,int *words,int *irc_bytes_read) {
+  int i;
+  char helptext[512];
+  helptext[0]=0;
+  if ((irc_buf+words[2]+6)[0]==0xd) {  /* 0xd = carriage return */
+    strncpy(helptext,":How may I satisfy you? I have a good grasp of"
+      " !love, !play, !ban, !vol, !help, !info, !skip and !stop. "
+      "Just ask for more :-)\n"
+      ,sizeof(helptext));
+  } else if ((!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7),"vol",3))) {
+    strncpy(helptext,":Try something like !vol 50 (I can go up to 64!) "
+      "or !vol %50 (this is 32) or !vol +3 or !vol -1\n",sizeof(helptext));
+  } else if (!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7)," !play",6)) {
+    strncpy(helptext,":I can !play user/$USER/loved, "
+      "user/$USER/personal, usertags/$USER/$TAG, "
+      "artist/$ARTIST/similarartists, artist/$ARTIST/fans, "
+      "globaltags/$TAG, user/$USER/recommended and "
+      "user/$USER/playlist\n",sizeof(helptext));
+  } else {
+    strncpy(helptext,":No clue...\n",sizeof(helptext));
+  }
+  i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  strncpy(irc_buf+i,helptext,IRC_BUFSIZE-i);
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
 int main(int argc, char **argv) {
@@ -255,29 +280,7 @@ int main(int argc, char **argv) {
         if (!strncmp(irc_buf+words[2]+1,"!skip",5)) {
           cmd_skip(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!help",5)) {
-          char helptext[512];
-          helptext[0]=0;
-          if ((irc_buf+words[2]+6)[0]==0xd) {  /* 0xd = carriage return */
-            strncpy(helptext,":How may I satisfy you? I have a good grasp of"
-              " !love, !play, !ban, !vol, !help, !info, !skip and !stop. "
-              "Just ask for more :-)\n"
-              ,sizeof(helptext));
-          } else if ((!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7),"vol",3))) {
-            strncpy(helptext,":Try something like !vol 50 (I can go up to 64!) "
-              "or !vol %50 (this is 32) or !vol +3 or !vol -1\n",sizeof(helptext));
-          } else if (!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7)," !play",6)) {
-            strncpy(helptext,":I can !play user/$USER/loved, "
-              "user/$USER/personal, usertags/$USER/$TAG, "
-              "artist/$ARTIST/similarartists, artist/$ARTIST/fans, "
-              "globaltags/$TAG, user/$USER/recommended and "
-              "user/$USER/playlist\n",sizeof(helptext));
-          } else {
-            strncpy(helptext,":No clue...\n",sizeof(helptext));
-          }
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,helptext,IRC_BUFSIZE-i);
-          send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
-
+          cmd_help(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!stop",5)) {
           char shellfm_rxbuf[512];
 #         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
