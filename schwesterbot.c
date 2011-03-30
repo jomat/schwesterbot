@@ -245,7 +245,7 @@ void cmd_stop(char *irc_buf,int *words,int *irc_bytes_read) {
 # define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
   int i=prepare_answer(irc_buf,words,*irc_bytes_read);
   int n_fm;
-  if (0>(n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512))) {
+  if (0>(n_fm = txrx_shellfm(STOPFORMAT,strlen(STOPFORMAT),shellfm_rxbuf,512))) {
     strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
     send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
     return;
