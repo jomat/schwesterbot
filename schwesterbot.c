@@ -22,8 +22,7 @@
 #else
 #  define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
 #endif
-//#define SHELLFM_HOST "schwester.club.muc.ccc.de"
-#define SHELLFM_HOST "localhost"
+#define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
 #define IRC_BUFSIZE 5120
