@@ -77,7 +77,8 @@ int txrx_shellfm(char *command,int bytes,char *buf, int bufsize)
 {
   int socket,n=0;
  
-  buf[0]=0;
+  if (bufsize)
+    buf[0]=0;
 
   if (0>(socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT))) {
     if (bufsize)
