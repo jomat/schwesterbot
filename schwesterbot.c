@@ -314,6 +314,26 @@ void cmd_ban(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
+void cmd_love(char *irc_buf,int *words,int *irc_bytes_read) {
+  char shellfm_rxbuf[512];
+  int n_fm
+    ,i=prepare_answer(irc_buf,words,*irc_bytes_read);
+
+# define LOVEFORMAT "info :Loving %a with \"%t\" on %s.\n"
+  if (0>(n_fm = txrx_shellfm(LOVEFORMAT,strlen(LOVEFORMAT),shellfm_rxbuf,512))) {
+    strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
+    send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+    return;
+  }
+
+  shellfm_rxbuf[n_fm]=0;
+  strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
+  irc_buf[n_fm+i]='\n';
+  irc_buf[n_fm+i+1]=0;
+  txrx_shellfm("love\n",5,NULL,0);
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+}
+
 void cmd_play(char *irc_buf,int *words,int *irc_bytes_read) {
   char tmp[512];
   int n_fm
@@ -395,6 +415,8 @@ int main(int argc, char **argv) {
           cmd_ban(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!play",5)) {
           cmd_play(irc_buf,words,&irc_bytes_read);
+        } else if (!strncmp(irc_buf+words[2]+1,"!love",5)) {
+          cmd_love(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!info",5)) {
           cmd_info(irc_buf,words,&irc_bytes_read);
         }
