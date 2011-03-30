@@ -259,6 +259,41 @@ void cmd_stop(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
+void cmd_vol(char *irc_buf,int *words,int *irc_bytes_read) {
+  char tmp[512],shellfm_rxbuf[512];
+# define VOLFORMAT "info %v\n"
+  int i,n_fm;
+
+  i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  if (0>(n_fm = txrx_shellfm(VOLFORMAT,strlen(VOLFORMAT),shellfm_rxbuf,512))) {
+    strncpy(tmp,irc_buf,sizeof(tmp));
+    strncpy(tmp+i,":shell-fm doesn't talk to me :-(\n",sizeof(tmp)-i);
+    send_irc(irc_sock,tmp,strlen(tmp),0);
+    return;
+  }
+  shellfm_rxbuf[n_fm-1]=0;
+
+  if (irc_buf[words[3]]) {
+    snprintf(tmp,sizeof(tmp),"volume %s\n",irc_buf+words[3]);
+    txrx_shellfm(tmp,strlen(tmp),NULL,0);
+  }
+
+  switch (irc_buf[words[3]]) {
+    case 0:
+      snprintf(irc_buf+i,sizeof(irc_buf)-i,":We're going at %s.\n",shellfm_rxbuf);
+      break;
+    case '+':
+      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Harder! Faster! Louder! %s was too silent!\n",shellfm_rxbuf);
+      break;
+    case '-':
+      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Calming down. We were at %s.\n",shellfm_rxbuf);
+      break;
+    default:
+      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Setting volume as requested, it was %s.\n",shellfm_rxbuf);
+  }
+  send_irc(irc_sock, irc_buf,strlen(irc_buf),0);
+}
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
   char irc_buf[IRC_BUFSIZE];
@@ -302,31 +337,8 @@ int main(int argc, char **argv) {
           cmd_help(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!stop",5)) {
           cmd_stop(irc_buf,words,&irc_bytes_read);
-        } else if (!strncmp(irc_buf+words[2]+1,"!vol",4)) {
-          char tmp[512],shellfm_rxbuf[512];
-#         define VOLFORMAT "info %v\n"
-          int n_fm = txrx_shellfm(VOLFORMAT,strlen(VOLFORMAT),shellfm_rxbuf,512);
-          shellfm_rxbuf[n_fm-1]=0;
-          if (irc_buf[words[3]]) {
-            snprintf(tmp,sizeof(tmp),"volume %s\n",irc_buf+words[3]);
-            txrx_shellfm(tmp,strlen(tmp),NULL,0);
-          }
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          switch (irc_buf[words[3]]) {
-            case 0:
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":We're going at %s.\n",shellfm_rxbuf);
-              break;
-            case '+':
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Harder! Faster! Louder! %s was too silent!\n",shellfm_rxbuf);
-              break;
-            case '-':
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Calming down. We were at %s.\n",shellfm_rxbuf);
-              break;
-            default:
-              snprintf(irc_buf+i,sizeof(irc_buf)-i,":Setting volume as requested, it was %s.\n",shellfm_rxbuf);
-          }
-          send_irc(irc_sock, irc_buf,strlen(irc_buf),0);
-
+        } else if (!strncmp(irc_buf+words[2]+1,"!vol",4)) { 
+          cmd_vol(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!ban",4)) {
           char shellfm_rxbuf[512];
 #         define BANFORMAT "info :Trying to ban \"%t\" by %a on %s.\n"
