@@ -207,8 +207,8 @@ void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-  irc_buf[n_fm+i]='\n';
-  irc_buf[n_fm+i+1]=0;
+  irc_buf[n_fm+i-1]='\n';
+  irc_buf[n_fm+i]=0;
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 
   txrx_shellfm("skip\n",5,NULL,0);
@@ -253,8 +253,8 @@ void cmd_stop(char *irc_buf,int *words,int *irc_bytes_read) {
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-  irc_buf[n_fm+i]='\n';
-  irc_buf[n_fm+i+1]=0;
+  irc_buf[n_fm+i-1]='\n';
+  irc_buf[n_fm+i]=0;
   txrx_shellfm("skip\n",5,NULL,0);
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
@@ -308,8 +308,8 @@ void cmd_ban(char *irc_buf,int *words,int *irc_bytes_read) {
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-  irc_buf[n_fm+i]='\n';
-  irc_buf[n_fm+i+1]=0;
+  irc_buf[n_fm+i-1]='\n';
+  irc_buf[n_fm+i]=0;
   txrx_shellfm("ban\n",4,NULL,0);
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
@@ -325,11 +325,12 @@ void cmd_love(char *irc_buf,int *words,int *irc_bytes_read) {
     send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
     return;
   }
+  printf("fofofo\n");
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-  irc_buf[n_fm+i]='\n';
-  irc_buf[n_fm+i+1]=0;
+  irc_buf[n_fm+i-1]='\n';
+  irc_buf[n_fm+i]=0;
   txrx_shellfm("love\n",5,NULL,0);
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
@@ -363,8 +364,8 @@ void cmd_info(char *irc_buf,int *words,int *irc_bytes_read) {
   n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),shellfm_rxbuf,512);
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-  irc_buf[n_fm+i]='\n';
-  irc_buf[n_fm+i+1]=0;
+  irc_buf[n_fm+i-1]='\n';
+  irc_buf[n_fm+i]=0;
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
