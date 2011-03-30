@@ -15,15 +15,23 @@
 #include <netinet/tcp.h>
 #include <pthread.h>
 
-#define IRC_HOST "irc.blafasel.de"
-#define IRC_PORT "6667"
+#ifndef IRC_HOST
+#  define IRC_HOST "irc.blafasel.de"
+#endif
+#ifndef IRC_PORT
+#  define IRC_PORT "6667"
+#endif
 #ifndef DEBUG
 #  define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
 #else
 #  define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
 #endif
-#define SHELLFM_HOST "schwester.club.muc.ccc.de"
-#define SHELLFM_PORT 54311
+#ifndef SHELLFM_HOST
+#  define SHELLFM_HOST "schwester.club.muc.ccc.de"
+#endif
+#ifndef SHELLFM_PORT
+#  define SHELLFM_PORT 54311
+#endif
 
 #define IRC_BUFSIZE 5120
 
