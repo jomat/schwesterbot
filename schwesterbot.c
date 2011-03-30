@@ -22,7 +22,8 @@
 #else
 #  define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
 #endif
-#define SHELLFM_HOST "schwester.club.muc.ccc.de"
+//#define SHELLFM_HOST "schwester.club.muc.ccc.de"
+#define SHELLFM_HOST "localhost"
 #define SHELLFM_PORT 54311
 
 #define IRC_BUFSIZE 5120
@@ -77,12 +78,22 @@ int txrx_shellfm(char *command,int bytes,char *buf, int bufsize)
 {
   int socket,n=0;
  
-  socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT); 
- 
-  write(socket, command, bytes); 
+  buf[0]=0;
 
-  if(bufsize)
-    n=read(socket, buf, bufsize);
+  if (0>(socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT))) {
+    if (bufsize)
+    return -1;
+  }
+
+  write(socket, command, bytes);
+
+  if (bufsize) {
+    if (-1==(n=read(socket, buf, bufsize)))
+      return -2;
+
+    if (buf[n-1]=='\n')
+      buf[n-1]=0;  // last char is an annoying \n, 0 it!
+  }
  
   close(socket); 
  
@@ -107,9 +118,11 @@ void update_status()
   static char last_playing[512];
   char now_playing[512];
 # define INFOFORMAT_UPDATE "info %t\" by %a on %s\n"
-  int n_fm=txrx_shellfm(INFOFORMAT_UPDATE,strlen(INFOFORMAT_UPDATE),now_playing,512);
-  now_playing[n_fm-1]=0;  // last char is an annoying \n, 0 it!
-  if(strncmp(last_playing,now_playing,512)) {
+  int n_fm;
+  if (0>(n_fm=txrx_shellfm(INFOFORMAT_UPDATE,strlen(INFOFORMAT_UPDATE),now_playing,512)))
+    return;
+
+  if (strncmp(last_playing,now_playing,512)) {
     char irc_cmd[512];
     strncpy(last_playing,now_playing,512);
     snprintf(irc_cmd,512,"TOPIC #schwester :Now playing \"%s.\n",now_playing);
@@ -184,8 +197,14 @@ void connect_irc()
 void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
 # define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
   char shellfm_rxbuf[512];
-  int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
+  int n_fm;
   int i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  if (0>(n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512))) {
+    strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
+    send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+    return;
+  }
+
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
