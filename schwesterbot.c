@@ -226,7 +226,7 @@ void cmd_help(char *irc_buf,int *words,int *irc_bytes_read) {
   } else if ((!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7),"vol",3))) {
     strncpy(helptext,":Try something like !vol 50 (I can go up to 64!) "
       "or !vol %50 (this is 32) or !vol +3 or !vol -1\n",sizeof(helptext));
-  } else if (!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7)," !play",6)) {
+  } else if (!strncmp(irc_buf+words[2]+((irc_buf+words[2]+7)[0]=='!'?8:7),"play",4)) {
     strncpy(helptext,":I can !play user/$USER/loved, "
       "user/$USER/personal, usertags/$USER/$TAG, "
       "artist/$ARTIST/similarartists, artist/$ARTIST/fans, "
