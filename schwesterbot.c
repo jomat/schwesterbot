@@ -333,7 +333,6 @@ void cmd_love(char *irc_buf,int *words,int *irc_bytes_read) {
     send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
     return;
   }
-  printf("fofofo\n");
 
   shellfm_rxbuf[n_fm]=0;
   strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
