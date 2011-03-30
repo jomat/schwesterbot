@@ -314,6 +314,40 @@ void cmd_ban(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
+void cmd_play(char *irc_buf,int *words,int *irc_bytes_read) {
+  char tmp[512];
+  int n_fm
+    ,i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  snprintf(tmp,sizeof(tmp),"play %s\n",irc_buf+words[3]);
+  if (0>(n_fm = txrx_shellfm(tmp,strlen(tmp),NULL,0))) {
+    strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
+    send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+    return;
+  }
+
+  strncpy(irc_buf+i,":I'll try to play this for you.\n\0",33);
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+}
+
+void cmd_info(char *irc_buf,int *words,int *irc_bytes_read) {
+  char shellfm_rxbuf[512];
+  int n_fm
+    ,i=prepare_answer(irc_buf,words,*irc_bytes_read);
+# define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
+  if (0>(n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),shellfm_rxbuf,512))) {
+    strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
+    send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+    return;
+  }
+
+  n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),shellfm_rxbuf,512);
+  shellfm_rxbuf[n_fm]=0;
+  strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
+  irc_buf[n_fm+i]='\n';
+  irc_buf[n_fm+i+1]=0;
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+}
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
   char irc_buf[IRC_BUFSIZE];
@@ -344,13 +378,11 @@ int main(int argc, char **argv) {
       irc_buf[1]='O';
       send_irc(irc_sock, irc_buf, irc_bytes_read, 0);
     } else {
-      int i;
       int words[4];
       find_words(irc_buf,irc_bytes_read,words);
 
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(irc_buf+words[0],"PRIVMSG ",8)) {
-
         if (!strncmp(irc_buf+words[2]+1,"!skip",5)) {
           cmd_skip(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!help",5)) {
@@ -362,23 +394,9 @@ int main(int argc, char **argv) {
         } else if (!strncmp(irc_buf+words[2]+1,"!ban",4)) {
           cmd_ban(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!play",5)) {
-          char tmp[512];
-          snprintf(tmp,sizeof(tmp),"play %s\n",irc_buf+words[3]);
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,":I'll try to play this for you.\n\0",33);
-          txrx_shellfm(tmp,strlen(tmp),NULL,0);
-          send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
-
+          cmd_play(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!info",5)) {
-          char shellfm_rxbuf[512];
-#         define INFOFORMAT "info :Now playing \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(INFOFORMAT,strlen(INFOFORMAT),shellfm_rxbuf,512);
-          shellfm_rxbuf[n_fm]=0;
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-          irc_buf[n_fm+i]='\n';
-          irc_buf[n_fm+i+1]=0;
-          send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+          cmd_info(irc_buf,words,&irc_bytes_read);
         }
       }
     }
