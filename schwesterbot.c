@@ -25,6 +25,8 @@
 #define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #define SHELLFM_PORT 54311
 
+#define IRC_BUFSIZE 5120
+
 int irc_sock=0;
 
 int prepare_answer(char *buf,int *words,int n);
@@ -174,9 +176,28 @@ void connect_irc()
     }                                                                \
   } while (0);
 
+/*
+ * read current song from shell-fm
+ * announce current song in irc
+ * skip current song on shell-fm
+ */
+void cmd_skip(char *irc_buf,int *words,int *irc_bytes_read) {
+# define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
+  char shellfm_rxbuf[512];
+  int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
+  int i=prepare_answer(irc_buf,words,*irc_bytes_read);
+
+  shellfm_rxbuf[n_fm]=0;
+  strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
+  irc_buf[n_fm+i]='\n';
+  irc_buf[n_fm+i+1]=0;
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+
+  txrx_shellfm("skip\n",5,NULL,0);
+}
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
-# define IRC_BUFSIZE 5120
   char irc_buf[IRC_BUFSIZE];
   int irc_bytes_read=0;
 
@@ -205,26 +226,15 @@ int main(int argc, char **argv) {
       irc_buf[1]='O';
       send_irc(irc_sock, irc_buf, irc_bytes_read, 0);
     } else {
-
+      int i;
       int words[4];
       find_words(irc_buf,irc_bytes_read,words);
 
       // rx: ":jomatv6!~jomat@lethe.jmt.gr PRIVMSG #jomat_testchan :!play globaltags/psybient"
       if (!strncmp(irc_buf+words[0],"PRIVMSG ",8)) {
-        int i=0;
 
         if (!strncmp(irc_buf+words[2]+1,"!skip",5)) {
-          char shellfm_rxbuf[512];
-#         define SKIPFORMAT "info :Skipping \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
-          shellfm_rxbuf[n_fm]=0;
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-          irc_buf[n_fm+i]='\n';
-          irc_buf[n_fm+i+1]=0;
-          txrx_shellfm("skip\n",5,NULL,0);
-          send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
-
+          cmd_skip(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!help",5)) {
           char helptext[512];
           helptext[0]=0;
