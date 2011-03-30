@@ -240,6 +240,25 @@ void cmd_help(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
+void cmd_stop(char *irc_buf,int *words,int *irc_bytes_read) {
+  char shellfm_rxbuf[512];
+# define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
+  int i=prepare_answer(irc_buf,words,*irc_bytes_read);
+  int n_fm;
+  if (0>(n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512))) {
+    strncpy(irc_buf+i,":shell-fm doesn't talk to me :-(\n",IRC_BUFSIZE-i);
+    send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+    return;
+  }
+
+  shellfm_rxbuf[n_fm]=0;
+  strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
+  irc_buf[n_fm+i]='\n';
+  irc_buf[n_fm+i+1]=0;
+  txrx_shellfm("skip\n",5,NULL,0);
+  send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
+}
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
   char irc_buf[IRC_BUFSIZE];
@@ -282,17 +301,7 @@ int main(int argc, char **argv) {
         } else if (!strncmp(irc_buf+words[2]+1,"!help",5)) {
           cmd_help(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!stop",5)) {
-          char shellfm_rxbuf[512];
-#         define STOPFORMAT "info :Trying to stop \"%t\" by %a on %s.\n"
-          int n_fm = txrx_shellfm(SKIPFORMAT,strlen(SKIPFORMAT),shellfm_rxbuf,512);
-          shellfm_rxbuf[n_fm]=0;
-          i=prepare_answer(irc_buf,words,irc_bytes_read);
-          strncpy(irc_buf+i,shellfm_rxbuf,IRC_BUFSIZE-i);
-          irc_buf[n_fm+i]='\n';
-          irc_buf[n_fm+i+1]=0;
-          txrx_shellfm("skip\n",5,NULL,0);
-          send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
-
+          cmd_stop(irc_buf,words,&irc_bytes_read);
         } else if (!strncmp(irc_buf+words[2]+1,"!vol",4)) {
           char tmp[512],shellfm_rxbuf[512];
 #         define VOLFORMAT "info %v\n"
