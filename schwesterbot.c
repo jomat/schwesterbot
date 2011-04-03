@@ -22,10 +22,12 @@
 #ifndef IRC_PORT
 #  define IRC_PORT "6667"
 #endif
-#ifndef DEBUG
-#  define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
-#else
-#  define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
+#ifndef IRC_IDSTRING
+#  ifndef DEBUG
+#    define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
+#  else
+#    define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
+#  endif
 #endif
 #ifndef SHELLFM_HOST
 #  define SHELLFM_HOST "schwester.club.muc.ccc.de"
