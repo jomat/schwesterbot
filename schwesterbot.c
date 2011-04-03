@@ -303,7 +303,7 @@ void cmd_vol(char *irc_buf,int *words,int *irc_bytes_read) {
 
   if (irc_buf[words[3]]) {
     snprintf(tmp,sizeof(tmp),"volume %s\n",irc_buf+words[3]);
-    txrx_shellfm(tmp,strlen(tmp),NULL,0);
+    txrx_shellfm(tmp,strlen(tmp),shellfm_rxbuf,512);
   }
 
   switch (irc_buf[words[3]]) {
