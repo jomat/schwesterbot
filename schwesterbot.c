@@ -437,7 +437,7 @@ int main(int argc, char **argv) {
   // read from irc and react on it
   while ((irc_bytes_read=read(irc_sock, irc_buf, IRC_BUFSIZE))) {
     irc_buf[irc_bytes_read]=0;
-    printf("-> %s\n",irc_buf);
+    printf("-> %s%c",irc_buf,irc_buf[irc_bytes_read-1]=='\n'?0:'\n');
 
     if (!strncmp("PING :",irc_buf,6)) {
       // rx: "PING :irc.blafasel.de"
