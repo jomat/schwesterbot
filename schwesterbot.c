@@ -197,7 +197,8 @@ void connect_irc()
 
     close (irc_sock); 
   }
-   
+
+  free(result);
 }
 
 #define find_words(irc_buf,irc_bytes_read,words) do {                \
