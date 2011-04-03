@@ -38,6 +38,7 @@
 
 int irc_sock=0
   ,shellfm_sock=-1;
+pthread_t status_thread;
 
 int prepare_answer(char *buf,int *words,int n);
 void quit(void);
@@ -400,7 +401,6 @@ void termination_handler (int signum) {
 }
 
 int main(int argc, char **argv) {
-  pthread_t status_thread;
   char irc_buf[IRC_BUFSIZE];
   int irc_bytes_read=0;
   struct sigaction new_action, old_action;
@@ -426,7 +426,6 @@ int main(int argc, char **argv) {
   sigaction (SIGTERM, NULL, &old_action);
   if (old_action.sa_handler != SIG_IGN)
     sigaction (SIGTERM, &new_action, NULL);
-
 
   connect_irc();
  
@@ -531,6 +530,9 @@ int prepare_answer(char *buf,int *words,int n) {
 
 void quit(void)
 {
+  pthread_cancel(status_thread);
+  pthread_join(status_thread,NULL);
+
   send_irc(irc_sock,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
   while(!close(irc_sock));
 
