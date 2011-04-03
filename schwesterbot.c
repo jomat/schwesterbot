@@ -35,7 +35,8 @@
 
 #define IRC_BUFSIZE 5120
 
-int irc_sock=0;
+int irc_sock=0
+  ,shellfm_sock=-1;
 
 int prepare_answer(char *buf,int *words,int n);
 
@@ -76,6 +77,12 @@ int socket_connect(char *host, in_port_t port)
   return sock;
 }
 
+void shellfm_connect()
+{
+  if (0>shellfm_sock)
+    shellfm_sock=socket_connect(SHELLFM_HOST, SHELLFM_PORT);
+}
+
 /*
  * sends bytes of command to shell-fm and
  * writes bufsize of answer into buf or
@@ -83,27 +90,25 @@ int socket_connect(char *host, in_port_t port)
  */
 int txrx_shellfm(char *command,int bytes,char *buf, int bufsize)
 {
-  int socket,n=0;
+  int n=0;
+
+  shellfm_connect();
+
+  if (0>shellfm_sock)
+    return -1;
  
   if (bufsize)
     buf[0]=0;
 
-  if (0>(socket=socket_connect(SHELLFM_HOST, SHELLFM_PORT))) {
-    if (bufsize)
-    return -1;
-  }
-
-  write(socket, command, bytes);
+  write(shellfm_sock, command, bytes);
 
   if (bufsize) {
-    if (-1==(n=read(socket, buf, bufsize)))
+    if (-1==(n=read(shellfm_sock, buf, bufsize)))
       return -2;
 
     if (buf[n-1]=='\n')
       buf[n-1]=0;  // last char is an annoying \n, 0 it!
   }
- 
-  close(socket); 
  
   return n;
 }
