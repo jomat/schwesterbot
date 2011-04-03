@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <signal.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,7 @@ int irc_sock=0
   ,shellfm_sock=-1;
 
 int prepare_answer(char *buf,int *words,int n);
+void quit(void);
 
 /*
  * open a tcp connection to host on port
@@ -151,6 +153,7 @@ void update_status()
 void *update_status_loop()
 {
   int snooze;
+  atexit(quit);
   while(1) {
     update_status();
     do {
@@ -392,16 +395,38 @@ void cmd_info(char *irc_buf,int *words,int *irc_bytes_read) {
   send_irc(irc_sock,irc_buf,strlen(irc_buf),0);
 }
 
+void termination_handler (int signum) {
+  exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char **argv) {
   pthread_t status_thread;
   char irc_buf[IRC_BUFSIZE];
   int irc_bytes_read=0;
+  struct sigaction new_action, old_action;
 
 # ifndef DEBUG
   int f=fork();
   if (f<0) exit(1); /* fork error */
   if (f>0) exit(0); /* parent exits */
 # endif /* DEBUG */
+
+  atexit(quit);
+
+  new_action.sa_handler = termination_handler;
+  sigemptyset (&new_action.sa_mask);
+  new_action.sa_flags = 0;
+
+  sigaction (SIGINT, NULL, &old_action);
+  if (old_action.sa_handler != SIG_IGN)
+    sigaction (SIGINT, &new_action, NULL);
+  sigaction (SIGHUP, NULL, &old_action);
+  if (old_action.sa_handler != SIG_IGN)
+    sigaction (SIGHUP, &new_action, NULL);
+  sigaction (SIGTERM, NULL, &old_action);
+  if (old_action.sa_handler != SIG_IGN)
+    sigaction (SIGTERM, &new_action, NULL);
+
 
   connect_irc();
  
@@ -449,9 +474,6 @@ int main(int argc, char **argv) {
       }
     }
   }
-
-  send_irc(irc_sock,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
-  close(irc_sock);
 
   exit(EXIT_SUCCESS);
 }
@@ -506,3 +528,14 @@ int prepare_answer(char *buf,int *words,int n) {
   }
   return i;
 }
+
+void quit(void)
+{
+  send_irc(irc_sock,"QUIT :cu\n",strlen("QUIT :cu\n"),0);
+  while(!close(irc_sock));
+
+  txrx_shellfm("detach\n",7,NULL,0);
+  while(!close(shellfm_sock));
+  exit(0);
+}
+
