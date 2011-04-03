@@ -290,7 +290,7 @@ void cmd_stop(char *irc_buf,int *words,int *irc_bytes_read) {
 }
 
 void cmd_vol(char *irc_buf,int *words,int *irc_bytes_read) {
-  char tmp[512],shellfm_rxbuf[512];
+  char tmp[512],shellfm_rxbuf[512],shellfm_rxbuf2[64];
 # define VOLFORMAT "info %v\n"
   int i,n_fm;
 
@@ -305,7 +305,7 @@ void cmd_vol(char *irc_buf,int *words,int *irc_bytes_read) {
 
   if (irc_buf[words[3]]) {
     snprintf(tmp,sizeof(tmp),"volume %s\n",irc_buf+words[3]);
-    txrx_shellfm(tmp,strlen(tmp),shellfm_rxbuf,512);
+    txrx_shellfm(tmp,strlen(tmp),shellfm_rxbuf2,64);
   }
 
   switch (irc_buf[words[3]]) {
@@ -313,13 +313,20 @@ void cmd_vol(char *irc_buf,int *words,int *irc_bytes_read) {
       snprintf(irc_buf+i,sizeof(irc_buf)-i,":We're going at %s.\n",shellfm_rxbuf);
       break;
     case '+':
-      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Harder! Faster! Louder! %s was too silent!\n",shellfm_rxbuf);
+      snprintf(irc_buf+i,sizeof(irc_buf)-i
+        ,":Harder! Faster! Louder! %s was too silent, %s is better!\n"
+        ,shellfm_rxbuf,shellfm_rxbuf2+7); // TODO: ALARM! here we assume that shellfm
+                                          // answers s. th. like "VOLUME 31"
       break;
     case '-':
-      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Calming down. We were at %s.\n",shellfm_rxbuf);
+      snprintf(irc_buf+i,sizeof(irc_buf)-i
+        ,":Calming down. We were at %s, now it's %s.\n"
+        ,shellfm_rxbuf,shellfm_rxbuf2+7); // TODO: see above
       break;
     default:
-      snprintf(irc_buf+i,sizeof(irc_buf)-i,":Setting volume as requested, it was %s.\n",shellfm_rxbuf);
+      snprintf(irc_buf+i,sizeof(irc_buf)-i
+        ,":Setting volume as requested, it was %s, now it's %s.\n"
+        ,shellfm_rxbuf,shellfm_rxbuf2+7); // TODO: see above
   }
   send_irc(irc_sock, irc_buf,strlen(irc_buf),0);
 }
