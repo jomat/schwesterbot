@@ -1,0 +1,7 @@
+irc_host = irc.blafasel.de
+irc_port = 6667
+irc_nick = schwester
+irc_mainchan = #schwester
+irc_extrachan = #santa
+shellfm_host = schwester.club.muc.ccc.de
+shellfm_port = 54311

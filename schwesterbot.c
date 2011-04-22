@@ -15,20 +15,37 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <pthread.h>
+#include <ctype.h>
 
 #ifndef IRC_HOST
 #  define IRC_HOST "irc.blafasel.de"
 #endif
 #ifndef IRC_PORT
-#  define IRC_PORT "6667"
+#  define IRC_PORT 6667
 #endif
-#ifndef IRC_IDSTRING
-#  ifndef DEBUG
-#    define IRC_IDSTRING "NICK schwester\nUSER Schwester 0 * :Schwester\nJOIN #schwester\nJOIN #santa\n"
-#  else
-#    define IRC_IDSTRING "NICK nuse\nUSER Schwester 0 * :Schwester\nJOIN #nuse\n"
+#ifndef DEBUG
+#  ifndef IRC_NICK
+#    define IRC_NICK "schwester"
 #  endif
-#endif
+#  ifndef IRC_MAINCHAN
+#    define IRC_MAINCHAN "#schwester"
+#  endif
+#  ifndef IRC_EXTRACHAN
+// this is an array of char arrays seperated by
+// the byte-sequence 0XA 0X4A 0X4F 0X49 0X4E 0X20
+#    define IRC_EXTRACHAN "#santa"
+#  endif
+#else /* ifndef DEBUG */
+#  ifndef IRC_NICK
+#    define IRC_NICK "nuse"
+#  endif
+#  ifndef IRC_MAINCHAN
+#    define IRC_MAINCHAN "#nuse"
+#  endif
+#  ifndef IRC_EXTRACHAN
+#    define IRC_EXTRACHAN "#nuse2\nJOIN #nuse3"
+#  endif
+#endif /* ifndef DEBUG */
 #ifndef SHELLFM_HOST
 #  define SHELLFM_HOST "schwester.club.muc.ccc.de"
 #endif
@@ -38,12 +55,92 @@
 
 #define IRC_BUFSIZE 5120
 
+struct cfg_struct {
+  char irc_host[128];
+  int  irc_port;
+  char irc_nick[32];
+  char irc_mainchan[32];
+  char irc_extrachan[512];
+  char shellfm_host[128];
+  int  shellfm_port;
+} cfg;
+
 int irc_sock=0
   ,shellfm_sock=-1;
 pthread_t status_thread;
 
 int prepare_answer(char *buf,int *words,int n);
 void quit(void);
+
+void trim(char *s) {
+  char *p = s;
+  int l = strlen(p);
+
+  while (isspace(p[l - 1]))
+    p[--l] = 0;
+  while (*p && isspace(*p))
+    ++p, --l;
+
+  memmove(s, p, l + 1);
+}
+
+void read_cfg(char *file) {
+  FILE *fd;
+  char line[512];
+  char *key, *keyval, *saveptr = 0;
+  int extrachan_set=0;
+
+  strncpy(cfg.irc_host,IRC_HOST,sizeof(cfg.irc_host));
+  cfg.irc_port=IRC_PORT;
+  strncpy(cfg.irc_nick,IRC_NICK,sizeof(cfg.irc_nick));
+  strncpy(cfg.irc_mainchan,IRC_MAINCHAN,sizeof(cfg.irc_mainchan));
+  cfg.irc_extrachan[0]=0;
+  strncpy(cfg.shellfm_host,SHELLFM_HOST,sizeof(cfg.shellfm_host));
+  cfg.shellfm_port=SHELLFM_PORT;
+
+  fd = fopen(file, "r");
+
+  if (NULL==fd)
+    goto end;
+
+  while (NULL!=fgets(line, sizeof(line), fd)) {
+    if ('#'==line[0])
+      continue;
+
+    key = strtok_r(line, "=", &saveptr);
+    if (NULL==key||0XA==0X0[key])
+      continue;
+    trim(key);
+    keyval = strtok_r(NULL, "=", &saveptr);
+    if (NULL==keyval||0XA==0X0[key])
+      continue;
+    trim(keyval);
+    if (!strcmp("irc_host",key)) {
+      strncpy(cfg.irc_host, keyval, sizeof(cfg.irc_host));
+    } else if (!strcmp("irc_port",key)) {
+      cfg.irc_port=atoi(keyval);
+    } else if (!strcmp("irc_mainchan",key)) {
+      strncpy(cfg.irc_mainchan, keyval, sizeof(cfg.irc_mainchan));
+    } else if (!strcmp("irc_extrachan",key)) {
+      extrachan_set=1;
+      if (cfg.irc_extrachan[0]) {
+        strncpy(cfg.irc_extrachan+strlen(cfg.irc_extrachan), "\nJOIN ", sizeof(cfg.irc_extrachan)-strlen(cfg.irc_extrachan));
+        strncpy(cfg.irc_extrachan+strlen(cfg.irc_extrachan), keyval, sizeof(cfg.irc_extrachan)-strlen(cfg.irc_extrachan));
+      } else {
+        strncpy(cfg.irc_extrachan, keyval, sizeof(cfg.irc_extrachan));
+      }
+    } else if (!strcmp("shellfm_host",key)) {
+      strncpy(cfg.shellfm_host, keyval, sizeof(cfg.shellfm_host));
+    } else if (!strcmp("shellfm_port",key)) {
+      cfg.shellfm_port=atoi(keyval);
+    }
+  }
+  fclose(fd);
+
+end:
+  if(!cfg.irc_extrachan[0]&&!extrachan_set)
+    strncpy(cfg.irc_extrachan,IRC_EXTRACHAN,sizeof(cfg.irc_extrachan));
+}
 
 /*
  * open a tcp connection to host on port
@@ -85,7 +182,7 @@ int socket_connect(char *host, in_port_t port)
 void shellfm_connect()
 {
   if (0>shellfm_sock)
-    shellfm_sock=socket_connect(SHELLFM_HOST, SHELLFM_PORT);
+    shellfm_sock=socket_connect(cfg.shellfm_host, cfg.shellfm_port);
 }
 
 /*
@@ -174,6 +271,7 @@ void connect_irc()
     ,*result
     ,*rp;
   int s=0;
+  char portstr[6];
 
   memset (&hints, 0, sizeof (struct addrinfo));
   hints.ai_family = AF_INET6;
@@ -181,7 +279,8 @@ void connect_irc()
   hints.ai_flags = 0;
   hints.ai_protocol = 0;
 
-  s = getaddrinfo (IRC_HOST, IRC_PORT, &hints, &result);
+  snprintf(portstr,sizeof(portstr),"%i",cfg.irc_port);
+  s = getaddrinfo(cfg.irc_host, portstr, &hints, &result);
   if (s != 0) {
     fprintf (stderr, "getaddrinfo: %s\n", gai_strerror (s));
     exit (EXIT_FAILURE);
@@ -414,6 +513,11 @@ int main(int argc, char **argv) {
   char irc_buf[IRC_BUFSIZE];
   int irc_bytes_read=0;
   struct sigaction new_action, old_action;
+  char configfile[FILENAME_MAX];
+  char connectstr[1024];
+
+  snprintf(configfile, FILENAME_MAX, "%s/%s", getenv("HOME"),".schwesterbotrc");
+  read_cfg(configfile);
 
 # ifndef DEBUG
   int f=fork();
@@ -440,7 +544,12 @@ int main(int argc, char **argv) {
   connect_irc();
  
   // set nick, join channels, etc.
-  send_irc(irc_sock, IRC_IDSTRING, strlen(IRC_IDSTRING), 0);
+  snprintf(connectstr,sizeof(connectstr),"NICK %s\nUSER %s 0 * :%s\nJOIN %s\n"
+    ,cfg.irc_nick,cfg.irc_nick,cfg.irc_nick,cfg.irc_mainchan);
+  if(cfg.irc_extrachan[0])
+    snprintf(connectstr+strlen(connectstr),sizeof(connectstr)-strlen(connectstr),"JOIN %s\n",cfg.irc_extrachan);
+
+  send_irc(irc_sock, connectstr, strlen(connectstr), 0);
 
   pthread_create(&status_thread, NULL, update_status_loop, NULL);
 
