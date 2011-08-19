@@ -242,8 +242,8 @@ void update_status()
     strncpy(last_playing,now_playing,512);
     snprintf(irc_cmd,512,"TOPIC #schwester :Now playing \"%s.\n",now_playing);
     send_irc(irc_sock,irc_cmd,strlen(irc_cmd),0);
-    snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
-    send_irc(irc_sock,irc_cmd,strlen(irc_cmd),0);
+    //snprintf(irc_cmd,512,"PRIVMSG #schwester :Now playing \"%s.\n",now_playing);
+    //send_irc(irc_sock,irc_cmd,strlen(irc_cmd),0);
   }
 }
 
